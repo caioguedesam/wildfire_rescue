@@ -9,12 +9,6 @@ public class Holder : MonoBehaviour
     public bool isHoldingBucket = false;
     // Has this holder finished the level?
     public bool hasFinished = false;
-    // Debug color for holding bucket
-    public Color holdingColor;
-    // Debug color for completed level
-    public Color completedColor;
-    // Debug color for failed level
-    public Color failedColor;
     // Is this holder ready to release the bucket
     public bool canPassBucket = false;
     // Time to hold bucket
@@ -31,12 +25,28 @@ public class Holder : MonoBehaviour
     public string key = "";
     // Position of next neighbor on grid
     public int nextPosX, nextPosY;
+    // Position of past neighbor on grid
+    public int pastPosX, pastPosY;
+    // Enum for pass and receive direction
+    public enum Direction {
+        left,
+        right,
+        up,
+        down,
+        toss
+    }
+    public Direction receiveDirection, passDirection;
+
     // is holders neighbor occupied
     public bool isNeighborHolding = false;
     // neighbor verify event
     public Vector2Event checkNeighborHoldingEvent;
     // animator reference
     private Animator animator;
+    // pass animation duration in seconds
+    public float passDuration = 1f;
+    // event for last holder toss
+    public BaseEvent lastHolderTossEvent;
 
 
     public Holder(Vector2Event passBucketEvent, Vector2Event receiveBucketEvent, Transform parent) {
@@ -47,7 +57,7 @@ public class Holder : MonoBehaviour
         transform.parent = parent;
     }
 
-    private void Start() {
+    private void Awake() {
         animator = GetComponent<Animator>();
     }
 
@@ -61,6 +71,43 @@ public class Holder : MonoBehaviour
         this.keyPressEvent = keyPressEvent;
         this.keys = keys;
         transform.parent = parent;
+    }
+
+    public Direction CalculateReceiveDirection() {
+        Vector2 current = new Vector2(posX, posY);
+        Vector2 past = new Vector2(pastPosX, pastPosY);
+        Direction dir;
+
+        // First in line receives from left
+        if (past == -Vector2.one) dir = Direction.left;
+        else if(current.y == past.y) {
+            dir = (current.x > past.x) ? Direction.left : Direction.right;
+        }
+        else {
+            dir = Direction.down;
+        }
+
+        animator.SetInteger("receiveDirection", (int)dir);
+        return dir;
+
+    }
+
+    public Direction CalculatePassDirection() {
+        Vector2 current = new Vector2(posX, posY);
+        Vector2 next = new Vector2(nextPosX, nextPosY);
+        Direction dir;
+
+        // Last in line passes with a throw
+        if (next == -Vector2.one) dir =  Direction.toss;
+        else if (current.y == next.y) {
+            dir = (current.x < next.x) ? Direction.right : Direction.left;
+        }
+        else {
+            dir = Direction.up;
+        }
+
+        animator.SetInteger("passDirection", (int)dir);
+        return dir;
     }
 
     public void PassBucketCheck() {
@@ -78,18 +125,30 @@ public class Holder : MonoBehaviour
         CheckNeighborHolding();
 
         if(key != "" && keyPressed == key && !isNeighborHolding) {
-            passBucketEvent.Raise(new Vector2(posX, posY));
-            if(!hasFinished) {
-                isHoldingBucket = canPassBucket = false;
-                Debug.Log("Raised pass event from " + new Vector2(posX, posY));
-                key = "";
-
-                GameObject keyObj = transform.GetChild(0).gameObject;
-                keyObj.SetActive(false);
-
-                this.GetComponent<SpriteRenderer>().color = Color.white;
-            }
+            StartCoroutine(PassBucketHandler());
         }
+    }
+
+    public IEnumerator PassBucketHandler() {
+        animator.SetTrigger("passEvent");
+        Debug.Log("pass animation trigger");
+        key = "";
+
+        if(new Vector2(nextPosX, nextPosY) == -Vector2.one) {
+            lastHolderTossEvent.Raise();
+        }
+        if (!hasFinished) {
+            isHoldingBucket = canPassBucket = false;
+
+            GameObject keyObj = transform.GetChild(0).gameObject;
+            keyObj.SetActive(false);
+
+            //this.GetComponent<SpriteRenderer>().color = Color.white;
+        }
+
+        yield return new WaitForSeconds(passDuration);
+        passBucketEvent.Raise(new Vector2(posX, posY));
+        Debug.Log("Raised pass event from " + new Vector2(posX, posY));
     }
 
     public void ReceiveBucket(Vector2 gridPos) {
@@ -100,9 +159,13 @@ public class Holder : MonoBehaviour
     }
 
     public IEnumerator HoldBucket() {
-        if(!isHoldingBucket) {
+        //yield return new WaitForSeconds(passDuration);
+
+        if (!isHoldingBucket) {
+            animator.SetTrigger("receiveEvent");
+            Debug.Log("receive animation trigger");
             isHoldingBucket = true;
-            this.GetComponent<SpriteRenderer>().color = holdingColor;
+            //this.GetComponent<SpriteRenderer>().color = holdingColor;
 
             yield return new WaitForSeconds(bucketHoldTime);
 
@@ -118,7 +181,8 @@ public class Holder : MonoBehaviour
         GameObject keyObj = transform.GetChild(0).gameObject;
         keyObj.SetActive(false);
 
-        this.GetComponent<SpriteRenderer>().color = completedColor;
+        animator.SetTrigger("win");
+        //this.GetComponent<SpriteRenderer>().color = completedColor;
     }
 
     public void Failed() {
@@ -129,7 +193,8 @@ public class Holder : MonoBehaviour
         GameObject keyObj = transform.GetChild(0).gameObject;
         keyObj.SetActive(false);
 
-        this.GetComponent<SpriteRenderer>().color = failedColor;
+        animator.SetTrigger("lose");
+        //this.GetComponent<SpriteRenderer>().color = failedColor;
     }
 
     public void CheckNeighborHolding() {

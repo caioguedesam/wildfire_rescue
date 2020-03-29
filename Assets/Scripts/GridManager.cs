@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using TMPro;
 public class GridManager : MonoBehaviour
 {
     // Grid variables
@@ -33,12 +33,17 @@ public class GridManager : MonoBehaviour
     public BaseEvent completedLevelEvent;
     // neighbor verify event
     public BoolEvent sendNeighborHoldingEvent;
+    // text for buckets remaining
+    public TextMeshProUGUI bucketText;
 
     private void Start() {
         grid = new Grid<GameObject>(width, height, cellSize, originPosition, () => GameObject.Instantiate(holderPrefab));
         PopulateGridHolders();
 
         StartCoroutine(SpawnBucketHandler());
+
+        bucketText.text = (bucketsToEnd - endReached).ToString() + " buckets remaining";
+        if(bucketsToEnd == 1) bucketText.text = (bucketsToEnd - endReached).ToString() + " bucket remaining";
     }
 
     private void RaiseKeyEvent(KeyCode key) {
@@ -60,9 +65,16 @@ public class GridManager : MonoBehaviour
             for (int j = 0; j < grid.gridArray.GetLength(1); j++) {
                 Holder holder = grid.gridArray[i, j].GetComponent<Holder>();
                 holder.SetHolderData(i, j, bucketHoldTime, passEvent, receiveEvent, keyPressEvent, keys, transform);
-                Vector2 neighborPos = NeighborPos(new Vector2(i, j));
-                holder.nextPosX = (int)neighborPos.x;
-                holder.nextPosY = (int)neighborPos.y;
+                Vector2 nextPos = NextNeighborPos(new Vector2(i, j));
+                holder.nextPosX = (int)nextPos.x;
+                holder.nextPosY = (int)nextPos.y;
+                Vector2 pastPos = pastNeighborPos(new Vector2(i, j));
+                holder.pastPosX = (int)pastPos.x;
+                holder.pastPosY = (int)pastPos.y;
+
+                holder.receiveDirection = holder.CalculateReceiveDirection();
+                holder.passDirection = holder.CalculatePassDirection();
+
                 grid.gridArray[i, j].transform.position = grid.GetWorldPosition(i, j);
             }
         }
@@ -70,8 +82,10 @@ public class GridManager : MonoBehaviour
 
     public void SpawnNewBucket() {
         // Raise receive event to first element of grid
-        receiveEvent.Raise(new Vector2(0, 0));
-        Debug.Log("Receive event with " + new Vector2(0, 0));
+        if(!grid.gridArray[0,0].GetComponent<Holder>().isHoldingBucket) {
+            receiveEvent.Raise(new Vector2(0, 0));
+            Debug.Log("Receive event with " + new Vector2(0, 0));
+        }
     }
 
     public IEnumerator SpawnBucketHandler() {
@@ -115,33 +129,33 @@ public class GridManager : MonoBehaviour
         }
     }
 
-    public Vector2 NeighborPos(Vector2 pastHolder) {
-        if (pastHolder.x < grid.gridArray.GetLength(0) && pastHolder.y < grid.gridArray.GetLength(1)) {
-            // End of grid neighbor is 0,0 by default, may change later
-            if (pastHolder.x == grid.gridArray.GetLength(0) - 1 && pastHolder.y == grid.gridArray.GetLength(1) - 1)
-                return new Vector2(0, 0);
+    public Vector2 NextNeighborPos(Vector2 holderPos) {
+        if (holderPos.x < grid.gridArray.GetLength(0) && holderPos.y < grid.gridArray.GetLength(1)) {
+            // End of grid neighbor is -1,-1 by default, may change later
+            if (holderPos.x == grid.gridArray.GetLength(0) - 1 && holderPos.y == grid.gridArray.GetLength(1) - 1)
+                return new Vector2(-1, -1);
 
 
-            if (pastHolder.y % 2 == 0) {
+            if (holderPos.y % 2 == 0) {
                 // go towards right
-                if (pastHolder.x == grid.gridArray.GetLength(0) - 1) {
+                if (holderPos.x == grid.gridArray.GetLength(0) - 1) {
                     // go up
-                    return new Vector2(pastHolder.x, pastHolder.y + 1);
+                    return new Vector2(holderPos.x, holderPos.y + 1);
                 }
                 else {
                     // go right
-                    return new Vector2(pastHolder.x + 1, pastHolder.y);
+                    return new Vector2(holderPos.x + 1, holderPos.y);
                 }
             }
             else {
                 // go towards left
-                if (pastHolder.x == 0) {
+                if (holderPos.x == 0) {
                     // go up
-                    return new Vector2(pastHolder.x, pastHolder.y + 1);
+                    return new Vector2(holderPos.x, holderPos.y + 1);
                 }
                 else {
                     // go left
-                    return new Vector2(pastHolder.x - 1, pastHolder.y);
+                    return new Vector2(holderPos.x - 1, holderPos.y);
                 }
             }
         }
@@ -150,8 +164,21 @@ public class GridManager : MonoBehaviour
         }
     }
 
+    // redo later because this is horrible but works
+    private Vector2 pastNeighborPos(Vector2 holderPos) {
+        for(int i = 0; i < grid.gridArray.GetLength(0); i++) {
+            for(int j = 0; j < grid.gridArray.GetLength(1); j++) {
+                Vector2 nextPos = NextNeighborPos(new Vector2(i, j));
+                if(nextPos == holderPos) {
+                    return new Vector2(i, j);
+                }
+            }
+        }
+        return new Vector2(-1, -1);
+    }
+
     public void CheckForNeighborHolding(Vector2 neighborPos) {
-        if (neighborPos == Vector2.zero) sendNeighborHoldingEvent.Raise(false);
+        if (neighborPos == -Vector2.one) sendNeighborHoldingEvent.Raise(false);
         else {
             // Checks if holder in given grid position is holding a bucket
             sendNeighborHoldingEvent.Raise(grid.gridArray[(int)neighborPos.x, (int)neighborPos.y].GetComponent<Holder>().isHoldingBucket);
@@ -161,10 +188,24 @@ public class GridManager : MonoBehaviour
     public void CheckForEndReached(Vector2 gridPos) {
         if (gridPos.x == grid.gridArray.GetLength(0) - 1 && gridPos.y == grid.gridArray.GetLength(1) - 1) {
             endReached++;
+            bucketText.text = (bucketsToEnd - endReached).ToString() + " buckets remaining";
+            if(endReached == bucketsToEnd - 1) bucketText.text = (bucketsToEnd - endReached).ToString() + " bucket remaining";
             Debug.Log("End reached " + endReached + " times");
             bucketReachedEndEvent.Raise();
-            if (endReached == bucketsToEnd) completedLevelEvent.Raise();
+            if (endReached == bucketsToEnd) {
+                completedLevelEvent.Raise();
+                bucketText.gameObject.SetActive(false);
+            }
         }
+    }
+
+    public void ClearBucketText() {
+        bucketText.gameObject.SetActive(false);
+    }
+
+    private void OnDrawGizmos() {
+        Gizmos.color = Color.magenta;
+        Gizmos.DrawWireSphere(originPosition, .5f);
     }
 
     // LOOP LIKE THIS:
