@@ -42,8 +42,7 @@ public class GridManager : MonoBehaviour
 
         StartCoroutine(SpawnBucketHandler());
 
-        bucketText.text = (bucketsToEnd - endReached).ToString() + " buckets remaining";
-        if(bucketsToEnd == 1) bucketText.text = (bucketsToEnd - endReached).ToString() + " bucket remaining";
+        bucketText.text = (bucketsToEnd - endReached).ToString();
     }
 
     private void RaiseKeyEvent(KeyCode key) {
@@ -188,19 +187,19 @@ public class GridManager : MonoBehaviour
     public void CheckForEndReached(Vector2 gridPos) {
         if (gridPos.x == grid.gridArray.GetLength(0) - 1 && gridPos.y == grid.gridArray.GetLength(1) - 1) {
             endReached++;
-            bucketText.text = (bucketsToEnd - endReached).ToString() + " buckets remaining";
-            if(endReached == bucketsToEnd - 1) bucketText.text = (bucketsToEnd - endReached).ToString() + " bucket remaining";
+            bucketText.text = (bucketsToEnd - endReached).ToString();
+            if(endReached == bucketsToEnd - 1) bucketText.text = (bucketsToEnd - endReached).ToString();
             Debug.Log("End reached " + endReached + " times");
             bucketReachedEndEvent.Raise();
             if (endReached == bucketsToEnd) {
                 completedLevelEvent.Raise();
-                bucketText.gameObject.SetActive(false);
+                bucketText.transform.parent.gameObject.SetActive(false);
             }
         }
     }
 
     public void ClearBucketText() {
-        bucketText.gameObject.SetActive(false);
+        bucketText.transform.parent.gameObject.SetActive(false);
     }
 
     private void OnDrawGizmos() {

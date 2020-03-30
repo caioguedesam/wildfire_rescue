@@ -260,12 +260,22 @@ PrefabInstance:
     - target: {fileID: 6939812060444460851, guid: eafeacc172cd8e148806323427a4a674,
         type: 3}
       propertyPath: timeUntilFail
-      value: 150
+      value: 70
       objectReference: {fileID: 0}
     - target: {fileID: 6939812060444460853, guid: eafeacc172cd8e148806323427a4a674,
         type: 3}
       propertyPath: m_Name
       value: Level Timer
+      objectReference: {fileID: 0}
+    - target: {fileID: 8083034162128085282, guid: eafeacc172cd8e148806323427a4a674,
+        type: 3}
+      propertyPath: m_Material
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 8083034162128085282, guid: eafeacc172cd8e148806323427a4a674,
+        type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 8834475484029333266, guid: eafeacc172cd8e148806323427a4a674,
         type: 3}
@@ -858,7 +868,7 @@ PrefabInstance:
     - target: {fileID: 2437452342224809406, guid: 7d5b336600773dc468860b7eb16cfa54,
         type: 3}
       propertyPath: bucketsToEnd
-      value: 7
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 2437452342224809406, guid: 7d5b336600773dc468860b7eb16cfa54,
         type: 3}
@@ -903,7 +913,7 @@ PrefabInstance:
     - target: {fileID: 2437452342224809406, guid: 7d5b336600773dc468860b7eb16cfa54,
         type: 3}
       propertyPath: bucketRespawnTime
-      value: 12
+      value: 8
       objectReference: {fileID: 0}
     - target: {fileID: 2437452342224809406, guid: 7d5b336600773dc468860b7eb16cfa54,
         type: 3}
@@ -914,6 +924,36 @@ PrefabInstance:
         type: 3}
       propertyPath: originPosition.x
       value: -5
+      objectReference: {fileID: 0}
+    - target: {fileID: 2437452342224809406, guid: 7d5b336600773dc468860b7eb16cfa54,
+        type: 3}
+      propertyPath: bucketHoldTime
+      value: 1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 2437452342224809406, guid: 7d5b336600773dc468860b7eb16cfa54,
+        type: 3}
+      propertyPath: firstBucketSpawnTime
+      value: 1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 2818113761379926512, guid: 7d5b336600773dc468860b7eb16cfa54,
+        type: 3}
+      propertyPath: m_textInfo.characterCount
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2818113761379926512, guid: 7d5b336600773dc468860b7eb16cfa54,
+        type: 3}
+      propertyPath: m_textInfo.wordCount
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2818113761379926512, guid: 7d5b336600773dc468860b7eb16cfa54,
+        type: 3}
+      propertyPath: m_textInfo.lineCount
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2818113761379926512, guid: 7d5b336600773dc468860b7eb16cfa54,
+        type: 3}
+      propertyPath: m_textInfo.pageCount
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 7d5b336600773dc468860b7eb16cfa54, type: 3}
